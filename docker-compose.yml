@@ -1,0 +1,36 @@
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: employee_management_system
+      MYSQL_USER: sakthi
+      MYSQL_PASSWORD: sakthi123
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  springboot-backend:
+    build:
+      context: ./springboot-backend
+      dockerfile: Dockerfile
+    ports:
+      - "80:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  react-frontend:
+    build:
+      context: ./react-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:3000"
+    depends_on:
+      - springboot-backend

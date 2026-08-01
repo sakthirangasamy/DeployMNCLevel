@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springboot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: springboot
+  template:
+    metadata:
+      labels:
+        app: springboot
+    spec:
+      containers:
+      - name: springboot
+        image: reactjs-spring-boot-crud-full-stack-app-springboot-backend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:mysql://mysql:3306/employee_management_system
+        - name: SPRING_DATASOURCE_USERNAME
+          value: sakthi
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: sakthi123
