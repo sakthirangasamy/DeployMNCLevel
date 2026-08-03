@@ -19,7 +19,7 @@ pipeline {
         stage('Backend Build') {
             steps {
                 dir('springboot-backend') {
-                    sh 'mvn clean compile'
+                    sh 'mvn clean compile -Dspring.profiles.active=docker'
                 }
             }
         }
@@ -28,7 +28,7 @@ pipeline {
         stage('Backend Test') {
             steps {
                 dir('springboot-backend') {
-                    sh 'mvn test'
+                    sh 'mvn test -Dspring.profiles.active=docker'
                 }
             }
         }
@@ -60,6 +60,7 @@ pipeline {
 
                         sh '''
                         mvn sonar:sonar \
+                        -Dspring.profiles.active=docker \
                         -Dsonar.projectKey=employee-management \
                         -Dsonar.projectName=employee-management
                         '''
