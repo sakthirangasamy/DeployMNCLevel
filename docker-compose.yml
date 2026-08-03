@@ -16,21 +16,21 @@ services:
       timeout: 5s
       retries: 10
 
-  springboot-backend:
-    build:
-      context: ./springboot-backend
-      dockerfile: Dockerfile
-    ports:
-      - "80:8080"
-    depends_on:
-      mysql:
-        condition: service_healthy
+  # springboot-backend:
+  #   build:
+  #     context: ./springboot-backend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "80:8080"
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
 
-  react-frontend:
-    build:
-      context: ./react-frontend
-      dockerfile: Dockerfile
-    ports:
-      - "5000:3000"
-    depends_on:
-      - springboot-backend
+  # react-frontend:
+  #   build:
+  #     context: ./react-frontend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "5000:3000"
+  #   depends_on:
+  #     - springboot-backend
