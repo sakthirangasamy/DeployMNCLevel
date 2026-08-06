@@ -31,22 +31,6 @@ pipeline {
             }
         }
 
-        stage('Frontend Install') {
-            steps {
-                dir('react-frontend') {
-                    sh 'npm install'
-                }
-            }
-        }
-
-        stage('Frontend Build') {
-            steps {
-                dir('react-frontend') {
-                    sh 'npm run build'
-                }
-            }
-        }
-
         stage('SonarQube Scan') {
             steps {
                 withSonarQubeEnv('SonarQube') {
