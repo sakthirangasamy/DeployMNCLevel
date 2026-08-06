@@ -36,7 +36,7 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                     dir('springboot-backend') {
                         sh '''
-                            mvn sonar:sonar \
+                            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.2.0.4988:sonar \
                               -Dsonar.projectKey=employee-management \
                               -Dsonar.projectName=employee-management
                         '''
