@@ -1,3 +1,4 @@
+```groovy
 pipeline {
 
     agent any
@@ -25,12 +26,12 @@ pipeline {
 
         stage('SonarQube Scan') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    dir('springboot-backend') {
+                dir('springboot-backend') {
+                    withSonarQubeEnv('SonarQube') {
                         sh '''
-                            mvn sonar:sonar \
-                            -Dsonar.projectKey=employee-management \
-                            -Dsonar.projectName=employee-management
+                            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.4.0.6343:sonar \
+                                -Dsonar.projectKey=employee-management \
+                                -Dsonar.projectName=employee-management
                         '''
                     }
                 }
@@ -73,3 +74,4 @@ pipeline {
         }
     }
 }
+```
