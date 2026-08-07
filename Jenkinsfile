@@ -15,18 +15,10 @@ pipeline {
             }
         }
 
-        stage('Backend Build') {
+        stage('Build & Test') {
             steps {
                 dir('springboot-backend') {
-                    sh 'mvn clean compile'
-                }
-            }
-        }
-
-        stage('Backend Test') {
-            steps {
-                dir('springboot-backend') {
-                    sh 'mvn test'
+                    sh 'mvn clean verify'
                 }
             }
         }
@@ -36,9 +28,9 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                     dir('springboot-backend') {
                         sh '''
-                            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.2.0.4988:sonar \
-                              -Dsonar.projectKey=employee-management \
-                              -Dsonar.projectName=employee-management
+                            mvn sonar:sonar \
+                            -Dsonar.projectKey=employee-management \
+                            -Dsonar.projectName=employee-management
                         '''
                     }
                 }
@@ -56,7 +48,7 @@ pipeline {
         stage('Package JAR') {
             steps {
                 dir('springboot-backend') {
-                    sh 'mvn clean package -DskipTests'
+                    sh 'mvn package -DskipTests'
                 }
             }
         }
@@ -68,10 +60,10 @@ pipeline {
                 }
             }
         }
-
     }
 
     post {
+
         success {
             echo 'Pipeline completed successfully.'
         }
