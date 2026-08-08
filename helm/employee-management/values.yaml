@@ -5,10 +5,10 @@ image:
   tag: "1.0"
   pullPolicy: IfNotPresent
 
-containerPort: 2630
+containerPort: 8080
 
 service:
   type: NodePort
   port: 8080
-  targetPort: 2630
+  targetPort: 8080
   nodePort: 30630
