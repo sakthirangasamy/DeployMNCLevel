@@ -1,0 +1,14 @@
+replicaCount: 1
+
+image:
+  repository: 172.25.93.123:8083/employee-management
+  tag: "1.0"
+  pullPolicy: IfNotPresent
+
+containerPort: 2630
+
+service:
+  type: NodePort
+  port: 8080
+  targetPort: 2630
+  nodePort: 30630
