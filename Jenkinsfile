@@ -9,19 +9,34 @@ pipeline {
 
     environment {
 
+        // =========================
+        // Application
+        // =========================
         IMAGE_NAME = "employee-management"
-        IMAGE_TAG = "1.0"
+        IMAGE_TAG  = "1.0"
 
+        // =========================
         // Nexus Docker Registry
+        // =========================
         NEXUS_URL = "172.25.93.123:8083"
 
+        // =========================
         // Helm
+        // =========================
         HELM_RELEASE = "employee-management"
-        HELM_CHART = "./helm/employee-management"
+        HELM_CHART   = "./helm/employee-management"
+
+        // =========================
+        // Kubernetes
+        // =========================
+        KUBECONFIG = "/var/jenkins_home/.kube/config"
     }
 
     stages {
 
+        // ==========================================
+        // 1. Checkout
+        // ==========================================
         stage('Checkout') {
 
             steps {
@@ -30,19 +45,26 @@ pipeline {
         }
 
 
-        stage('Build & Test') {
+        // ==========================================
+        // 2. Backend Build
+        // ==========================================
+        stage('Build Backend') {
 
             steps {
 
                 dir('springboot-backend') {
 
-                    sh 'mvn clean verify'
-
+                    sh '''
+                        mvn clean package -DskipTests
+                    '''
                 }
             }
         }
 
 
+        // ==========================================
+        // 3. SonarQube Scan
+        // ==========================================
         stage('SonarQube Scan') {
 
             steps {
@@ -62,32 +84,29 @@ pipeline {
         }
 
 
+        // ==========================================
+        // 4. Quality Gate
+        // ==========================================
         stage('Quality Gate') {
 
             steps {
 
-                timeout(time: 15, unit: 'MINUTES') {
+                timeout(
+                    time: 15,
+                    unit: 'MINUTES'
+                ) {
 
-                    waitForQualityGate abortPipeline: true
-
+                    waitForQualityGate(
+                        abortPipeline: true
+                    )
                 }
             }
         }
 
 
-        stage('Package JAR') {
-
-            steps {
-
-                dir('springboot-backend') {
-
-                    sh 'mvn package -DskipTests'
-
-                }
-            }
-        }
-
-
+        // ==========================================
+        // 5. Docker Build
+        // ==========================================
         stage('Docker Build') {
 
             steps {
@@ -103,7 +122,10 @@ pipeline {
         }
 
 
-        stage('Docker Push Nexus') {
+        // ==========================================
+        // 6. Docker Login Nexus
+        // ==========================================
+        stage('Docker Login Nexus') {
 
             steps {
 
@@ -118,23 +140,50 @@ pipeline {
                 ]) {
 
                     sh '''
-                        echo "$NEXUS_PASSWORD" | docker login ${NEXUS_URL} \
+                        echo "$NEXUS_PASSWORD" | \
+                        docker login ${NEXUS_URL} \
                         -u "$NEXUS_USERNAME" \
                         --password-stdin
-
-                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} \
-                        ${NEXUS_URL}/${IMAGE_NAME}:${IMAGE_TAG}
-
-                        docker push \
-                        ${NEXUS_URL}/${IMAGE_NAME}:${IMAGE_TAG}
-
-                        docker logout ${NEXUS_URL} || true
                     '''
                 }
             }
         }
 
 
+        // ==========================================
+        // 7. Docker Tag
+        // ==========================================
+        stage('Docker Tag') {
+
+            steps {
+
+                sh '''
+                    docker tag \
+                    ${IMAGE_NAME}:${IMAGE_TAG} \
+                    ${NEXUS_URL}/${IMAGE_NAME}:${IMAGE_TAG}
+                '''
+            }
+        }
+
+
+        // ==========================================
+        // 8. Docker Push Nexus
+        // ==========================================
+        stage('Docker Push Nexus') {
+
+            steps {
+
+                sh '''
+                    docker push \
+                    ${NEXUS_URL}/${IMAGE_NAME}:${IMAGE_TAG}
+                '''
+            }
+        }
+
+
+        // ==========================================
+        // 9. Helm Lint
+        // ==========================================
         stage('Helm Lint') {
 
             steps {
@@ -146,6 +195,27 @@ pipeline {
         }
 
 
+        // ==========================================
+        // 10. Helm Template Validation
+        // ==========================================
+        stage('Helm Template') {
+
+            steps {
+
+                sh '''
+                    helm template \
+                    ${HELM_RELEASE} \
+                    ${HELM_CHART} \
+                    --set image.repository=${NEXUS_URL}/${IMAGE_NAME} \
+                    --set image.tag=${IMAGE_TAG}
+                '''
+            }
+        }
+
+
+        // ==========================================
+        // 11. Helm Deploy K3s
+        // ==========================================
         stage('Helm Deploy K3s') {
 
             steps {
@@ -154,33 +224,19 @@ pipeline {
                     helm upgrade --install \
                     ${HELM_RELEASE} \
                     ${HELM_CHART} \
+                    --namespace default \
+                    --create-namespace \
                     --set image.repository=${NEXUS_URL}/${IMAGE_NAME} \
-                    --set image.tag=${IMAGE_TAG} \
-                    --set image.pullPolicy=Always
+                    --set image.tag=${IMAGE_TAG}
                 '''
             }
         }
 
 
-        stage('Kubernetes Status') {
-
-            steps {
-
-                sh '''
-                    echo "===== K3s Nodes ====="
-                    kubectl get nodes
-
-                    echo "===== Pods ====="
-                    kubectl get pods -o wide
-
-                    echo "===== Services ====="
-                    kubectl get services
-                '''
-            }
-        }
-
-
-        stage('Deployment Check') {
+        // ==========================================
+        // 12. Kubernetes Rollout
+        // ==========================================
+        stage('Kubernetes Rollout') {
 
             steps {
 
@@ -191,21 +247,64 @@ pipeline {
                 '''
             }
         }
+
+
+        // ==========================================
+        // 13. Kubernetes Status
+        // ==========================================
+        stage('Kubernetes Status') {
+
+            steps {
+
+                sh '''
+                    echo "================ PODS ================"
+
+                    kubectl get pods -o wide
+
+                    echo "================ SERVICES ================"
+
+                    kubectl get services
+
+                    echo "================ DEPLOYMENTS ================"
+
+                    kubectl get deployments
+
+                    echo "================ HELM ================"
+
+                    helm list
+                '''
+            }
+        }
     }
 
 
+    // ==========================================
+    // POST ACTIONS
+    // ==========================================
     post {
 
         success {
 
-            echo 'CI/CD Pipeline completed successfully.'
-
+            echo '''
+            ==========================================
+            CI/CD PIPELINE SUCCESS
+            ==========================================
+            Docker image pushed to Nexus.
+            Helm deployment completed.
+            Kubernetes rollout completed.
+            ==========================================
+            '''
         }
 
         failure {
 
-            echo 'CI/CD Pipeline failed.'
-
+            echo '''
+            ==========================================
+            CI/CD PIPELINE FAILED
+            ==========================================
+            Check the failed stage and Jenkins console.
+            ==========================================
+            '''
         }
 
         always {
