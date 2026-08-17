@@ -7,13 +7,6 @@ pipeline {
         maven 'Maven3'
     }
 
-    environment {
-        IMAGE_NAME = 'employee-management'
-        IMAGE_TAG = "${BUILD_NUMBER}"
-
-        NEXUS_REGISTRY = 'nexus:8082'
-    }
-
     stages {
 
         stage('Checkout') {
@@ -62,50 +55,8 @@ pipeline {
                 dir('springboot-backend') {
 
                     sh 'mvn package -DskipTests'
-                }
-            }
-        }
 
-        stage('Docker Build') {
-            steps {
-
-                dir('springboot-backend') {
-
-                    sh '''
-                        docker build \
-                            -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                    '''
-                }
-            }
-        }
-
-        stage('Docker Push Nexus') {
-            steps {
-
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'nexus-login',
-                        usernameVariable: 'NEXUS_USERNAME',
-                        passwordVariable: 'NEXUS_PASSWORD'
-                    )
-                ]) {
-
-                    sh '''
-
-                        echo "$NEXUS_PASSWORD" | \
-                        docker login ${NEXUS_REGISTRY} \
-                        -u "$NEXUS_USERNAME" \
-                        --password-stdin
-
-                        docker tag \
-                            ${IMAGE_NAME}:${IMAGE_TAG} \
-                            ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-
-                        docker push \
-                            ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-
-                        docker logout ${NEXUS_REGISTRY}
-                    '''
+                    sh 'ls -lh target/*.jar'
                 }
             }
         }
@@ -114,11 +65,11 @@ pipeline {
     post {
 
         success {
-            echo 'CI Pipeline completed successfully!'
+            echo 'Phase 1 completed successfully - JAR generated!'
         }
 
         failure {
-            echo 'CI Pipeline failed!'
+            echo 'Phase 1 failed!'
         }
     }
 }
