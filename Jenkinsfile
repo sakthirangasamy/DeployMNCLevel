@@ -25,7 +25,7 @@ pipeline {
         stage('Build & Test') {
             steps {
                 dir('springboot-backend') {
-                    sh 'mvn clean verify'
+                    sh 'mvn clean verify -DforkCount=0'
                 }
             }
         }
