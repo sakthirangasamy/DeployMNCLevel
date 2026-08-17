@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    tools {
+        jdk 'JDK17'
+        maven 'Maven3'
+    }
+
     stages {
 
         stage('Checkout') {
@@ -9,10 +14,11 @@ pipeline {
             }
         }
 
-        stage('Test GitHub Connection') {
+        stage('Build & Test') {
             steps {
-                sh 'echo "GitHub connected successfully!"'
-                sh 'git log -1 --oneline'
+                dir('springboot-backend') {
+                    sh 'mvn clean verify'
+                }
             }
         }
     }
