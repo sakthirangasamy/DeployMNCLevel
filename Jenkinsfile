@@ -96,12 +96,29 @@ pipeline {
             }
         }
 
+        stage('Maven Build') {
+            steps {
+                dir('springboot-backend') {
+                    sh '''
+                        echo "Building Spring Boot application..."
+
+                        mvn clean package -DskipTests
+
+                        echo "Build completed."
+                    '''
+                }
+            }
+        }
+
         stage('Verify JAR') {
             steps {
                 dir('springboot-backend') {
                     sh '''
                         echo "Checking JAR file..."
+
                         ls -lh target/*.jar
+
+                        echo "JAR file generated successfully."
                     '''
                 }
             }
@@ -110,10 +127,14 @@ pipeline {
         stage('Docker Build') {
             steps {
                 dir('springboot-backend') {
-
                     sh '''
+                        echo "Building Docker image..."
+
                         docker build \
                             -t ${IMAGE_NAME}:${IMAGE_TAG} .
+
+                        echo "Docker image created:"
+                        docker images | grep ${IMAGE_NAME}
                     '''
                 }
             }
@@ -131,19 +152,27 @@ pipeline {
                 ]) {
 
                     sh '''
+                        echo "Logging into Nexus..."
+
                         echo "$NEXUS_PASSWORD" | \
                         docker login ${NEXUS_REGISTRY} \
                         -u "$NEXUS_USERNAME" \
                         --password-stdin
 
+                        echo "Tagging Docker image..."
+
                         docker tag \
                             ${IMAGE_NAME}:${IMAGE_TAG} \
                             ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+
+                        echo "Pushing image to Nexus..."
 
                         docker push \
                             ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
 
                         docker logout ${NEXUS_REGISTRY}
+
+                        echo "Docker image pushed successfully."
                     '''
                 }
             }
@@ -152,6 +181,8 @@ pipeline {
         stage('Verify Docker Image') {
             steps {
                 sh '''
+                    echo "Verifying Docker image..."
+
                     docker images | grep ${IMAGE_NAME}
                 '''
             }
@@ -161,12 +192,20 @@ pipeline {
     post {
 
         success {
+            echo "======================================"
             echo "Phase 2 completed successfully!"
+            echo "JAR built successfully."
+            echo "Docker image built successfully."
             echo "Docker image pushed to Nexus."
+            echo "Image: ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+            echo "======================================"
         }
 
         failure {
+            echo "======================================"
             echo "Phase 2 failed!"
+            echo "Check Jenkins console output."
+            echo "======================================"
         }
     }
 }
