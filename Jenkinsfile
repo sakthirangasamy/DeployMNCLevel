@@ -81,10 +81,14 @@ pipeline {
 
     agent any
 
+    tools {
+        jdk 'JDK17'
+        maven 'Maven3'
+    }
+
     environment {
         IMAGE_NAME = 'employee-management'
         IMAGE_TAG = "${BUILD_NUMBER}"
-
         NEXUS_REGISTRY = 'localhost:8082'
     }
 
@@ -96,15 +100,18 @@ pipeline {
             }
         }
 
-        stage('Maven Build') {
+        stage('Build Spring Boot') {
             steps {
                 dir('springboot-backend') {
                     sh '''
+                        echo "Java version:"
+                        java -version
+
+                        echo "Maven version:"
+                        mvn -version
+
                         echo "Building Spring Boot application..."
-
                         mvn clean package -DskipTests
-
-                        echo "Build completed."
                     '''
                 }
             }
@@ -115,10 +122,7 @@ pipeline {
                 dir('springboot-backend') {
                     sh '''
                         echo "Checking JAR file..."
-
                         ls -lh target/*.jar
-
-                        echo "JAR file generated successfully."
                     '''
                 }
             }
@@ -128,13 +132,8 @@ pipeline {
             steps {
                 dir('springboot-backend') {
                     sh '''
-                        echo "Building Docker image..."
-
                         docker build \
                             -t ${IMAGE_NAME}:${IMAGE_TAG} .
-
-                        echo "Docker image created:"
-                        docker images | grep ${IMAGE_NAME}
                     '''
                 }
             }
@@ -142,7 +141,6 @@ pipeline {
 
         stage('Docker Login & Push Nexus') {
             steps {
-
                 withCredentials([
                     usernamePassword(
                         credentialsId: 'nexus-login',
@@ -150,62 +148,22 @@ pipeline {
                         passwordVariable: 'NEXUS_PASSWORD'
                     )
                 ]) {
-
                     sh '''
-                        echo "Logging into Nexus..."
-
-                        echo "$NEXUS_PASSWORD" | \
-                        docker login ${NEXUS_REGISTRY} \
-                        -u "$NEXUS_USERNAME" \
-                        --password-stdin
-
-                        echo "Tagging Docker image..."
+                        echo "$NEXUS_PASSWORD" | docker login ${NEXUS_REGISTRY} \
+                            -u "$NEXUS_USERNAME" \
+                            --password-stdin
 
                         docker tag \
                             ${IMAGE_NAME}:${IMAGE_TAG} \
                             ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
 
-                        echo "Pushing image to Nexus..."
-
                         docker push \
                             ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
 
                         docker logout ${NEXUS_REGISTRY}
-
-                        echo "Docker image pushed successfully."
                     '''
                 }
             }
-        }
-
-        stage('Verify Docker Image') {
-            steps {
-                sh '''
-                    echo "Verifying Docker image..."
-
-                    docker images | grep ${IMAGE_NAME}
-                '''
-            }
-        }
-    }
-
-    post {
-
-        success {
-            echo "======================================"
-            echo "Phase 2 completed successfully!"
-            echo "JAR built successfully."
-            echo "Docker image built successfully."
-            echo "Docker image pushed to Nexus."
-            echo "Image: ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
-            echo "======================================"
-        }
-
-        failure {
-            echo "======================================"
-            echo "Phase 2 failed!"
-            echo "Check Jenkins console output."
-            echo "======================================"
         }
     }
 }
