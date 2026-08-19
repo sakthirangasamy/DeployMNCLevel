@@ -1,8 +1,8 @@
-replicaCount: 1
+replicaCount: 2
 
 image:
   repository: localhost:8082/employee-management
-  tag: "13"
+  tag: "17"
   pullPolicy: IfNotPresent
 
 containerPort: 8080

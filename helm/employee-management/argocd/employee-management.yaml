@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+metadata:
+  name: employee-management
+  namespace: argocd
+
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/sakthirangasamy/employee-management-gitops.git
+    targetRevision: main
+    path: .
+
+    helm:
+      valueFiles:
+        - values.yaml
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: employee-management
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true
