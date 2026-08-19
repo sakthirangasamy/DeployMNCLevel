@@ -89,7 +89,7 @@ pipeline {
     environment {
         IMAGE_NAME = 'employee-management'
         IMAGE_TAG = "${BUILD_NUMBER}"
-        NEXUS_REGISTRY = 'localhost:8082'
+        NEXUS_REGISTRY = 'nexus:8082'
     }
 
     stages {
