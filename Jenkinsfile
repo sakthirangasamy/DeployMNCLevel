@@ -9,7 +9,7 @@ pipeline {
         IMAGE_NAME = 'employee-management'
         IMAGE_TAG = "${BUILD_NUMBER}"
         NEXUS_REGISTRY = 'localhost:8082'
-        HELM_REPO_URL = 'https://github.com/YOUR-ORG/employee-management-helm.git'
+        HELM_REPO_URL = 'https://github.com/sakthirangasamy/employee-management-gitops.git'
         HELM_BRANCH = 'main'
     }
 
@@ -117,7 +117,7 @@ pipeline {
                             echo "======================================"
                             
                             git remote set-url origin \
-                            https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/YOUR-ORG/employee-management-helm.git
+                            https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/sakthirangasamy/employee-management-gitops.git
                             
                             git push origin ${HELM_BRANCH}
                             
