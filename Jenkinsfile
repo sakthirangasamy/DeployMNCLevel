@@ -14,9 +14,6 @@ pipeline {
         IMAGE_NAME = 'employee-management'
         IMAGE_TAG = "${BUILD_NUMBER}"
         
-        // ====================================================
-        // NEXUS CONFIGURATION
-        // ====================================================
         NEXUS_REGISTRY = 'localhost:8083'
         NEXUS_REPOSITORY = 'employee-docker'
         
@@ -69,7 +66,7 @@ pipeline {
         stage('PHASE 2 - Docker Build') {
             steps {
                 dir('springboot-backend') {
-                    sh '''
+                    sh """
                         echo "======================================"
                         echo "PHASE 2 - DOCKER BUILD"
                         echo "======================================"
@@ -86,14 +83,14 @@ pipeline {
                         echo "======================================"
                         
                         docker images | grep ${IMAGE_NAME}
-                    '''
+                    """
                 }
             }
         }
 
         stage('PHASE 2 - Verify Docker Image') {
             steps {
-                sh '''
+                sh """
                     echo "======================================"
                     echo "VERIFY DOCKER IMAGE"
                     echo "======================================"
@@ -105,8 +102,8 @@ pipeline {
                     echo "  Registry: ${NEXUS_REGISTRY}"
                     echo "  Repository: ${NEXUS_REPOSITORY}"
                     echo "  Image: ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
-                    echo "  Size: $(docker images ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} --format '{{.Size}}')"
-                '''
+                    echo "  Size: \$(docker images ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} --format '{{.Size}}')"
+                """
             }
         }
 
@@ -119,13 +116,12 @@ pipeline {
                         passwordVariable: 'NEXUS_PASSWORD'
                     )
                 ]) {
-                    sh '''
+                    sh """
                         echo "======================================"
                         echo "LOGIN TO NEXUS REGISTRY"
                         echo "======================================"
                         
                         echo "Nexus URL: ${NEXUS_REGISTRY}"
-                        echo "Username: ${NEXUS_USERNAME}"
                         
                         echo "${NEXUS_PASSWORD}" | docker login ${NEXUS_REGISTRY} \\
                             -u "${NEXUS_USERNAME}" \\
@@ -135,10 +131,7 @@ pipeline {
                         echo "PUSHING IMAGE TO NEXUS"
                         echo "======================================"
                         
-                        echo "Pushing: ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
                         docker push ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-                        
-                        echo "Pushing: ${NEXUS_REGISTRY}/${IMAGE_NAME}:latest"
                         docker push ${NEXUS_REGISTRY}/${IMAGE_NAME}:latest
                         
                         echo "======================================"
@@ -148,7 +141,7 @@ pipeline {
                         echo "✅ Images pushed to Nexus:"
                         echo "   ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
                         echo "   ${NEXUS_REGISTRY}/${IMAGE_NAME}:latest"
-                    '''
+                    """
                 }
             }
         }
@@ -177,7 +170,6 @@ pipeline {
                         
                         echo "Repository: $(git remote get-url origin)"
                         echo "Branch:     $(git branch --show-current)"
-                        echo "Files:"
                         ls -la
                     '''
                 }
@@ -187,7 +179,7 @@ pipeline {
         stage('PHASE 3 - Update Helm Image Tag') {
             steps {
                 dir('helm-repo') {
-                    sh '''
+                    sh """
                         echo "======================================"
                         echo "UPDATING IMAGE TAG TO: ${IMAGE_TAG}"
                         echo "======================================"
@@ -195,7 +187,6 @@ pipeline {
                         echo "Current values.yaml:"
                         cat values.yaml
                         
-                        # Update the image tag in values.yaml
                         sed -i "s/^  tag:.*/  tag: \\"${IMAGE_TAG}\\"/" values.yaml
                         
                         echo "======================================"
@@ -203,7 +194,7 @@ pipeline {
                         echo "======================================"
                         
                         cat values.yaml
-                    '''
+                    """
                 }
             }
         }
@@ -228,7 +219,7 @@ pipeline {
         stage('PHASE 3 - Commit Helm Changes') {
             steps {
                 dir('helm-repo') {
-                    sh '''
+                    sh """
                         echo "======================================"
                         echo "COMMITTING CHANGES"
                         echo "======================================"
@@ -238,9 +229,7 @@ pipeline {
                         
                         git add values.yaml
                         git commit -m "Update employee-management image to ${IMAGE_TAG}" || echo "No changes to commit"
-                        
-                        echo "Commit: $(git log -1 --oneline)"
-                    '''
+                    """
                 }
             }
         }
@@ -255,7 +244,7 @@ pipeline {
                             passwordVariable: 'GIT_PASSWORD'
                         )
                     ]) {
-                        sh '''
+                        sh """
                             echo "======================================"
                             echo "PUSHING TO GITHUB"
                             echo "======================================"
@@ -268,11 +257,7 @@ pipeline {
                             echo "======================================"
                             echo "GITOPS REPOSITORY UPDATED"
                             echo "======================================"
-                            
-                            echo "✅ Changes pushed to GitHub"
-                            echo "   Repository: ${HELM_REPO_URL}"
-                            echo "   Branch: ${HELM_BRANCH}"
-                        '''
+                        """
                     }
                 }
             }
@@ -380,27 +365,27 @@ pipeline {
         }
 
         failure {
-            echo """
+            echo '''
             ==============================================
             ❌  CI/CD PIPELINE FAILED
             ==============================================
 
             TROUBLESHOOTING CHECKLIST
             -------------------------
-            □  Nexus is running on port 8083
-            □  Nexus credentials are correct
-            □  Docker daemon is running
-            □  GitHub credentials are correct
-            □  GitOps repository exists
-            □  values.yaml exists in GitOps repo
-            □  Argo CD is running
-            □  K3s cluster is healthy
+            1. Nexus is running on port 8083
+            2. Nexus credentials are correct
+            3. Docker daemon is running
+            4. GitHub credentials are correct
+            5. GitOps repository exists
+            6. values.yaml exists in GitOps repo
+            7. Argo CD is running
+            8. K3s cluster is healthy
 
             Check Nexus: http://localhost:8083
             Check Jenkins logs for more details.
 
             ==============================================
-            """
+            '''
         }
 
         always {
