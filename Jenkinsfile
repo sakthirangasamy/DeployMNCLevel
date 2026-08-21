@@ -174,10 +174,10 @@ pipeline {
                             echo "PUSH GITOPS CHANGES TO GITHUB"
                             echo "======================================"
 
-                            git remote set-url personal \
+                            git remote set-url origin \
                             "https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/sakthirangasamy/employee-management-gitops.git"
 
-                            git push personal ${HELM_BRANCH}
+                            git push origin ${HELM_BRANCH}
 
                             echo "======================================"
                             echo "GITOPS REPOSITORY UPDATED"
