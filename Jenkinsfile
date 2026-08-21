@@ -14,7 +14,7 @@ pipeline {
         IMAGE_NAME = 'employee-management'
         IMAGE_TAG = "${BUILD_NUMBER}"
         
-        NEXUS_REGISTRY = 'localhost:8083'
+        NEXUS_REGISTRY = 'localhost:8082'
         NEXUS_REPOSITORY = 'employee-docker'
         
         HELM_REPO_URL = 'https://github.com/sakthirangasamy/employee-management-gitops.git'
