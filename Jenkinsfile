@@ -15,10 +15,10 @@ pipeline {
         IMAGE_TAG = "${BUILD_NUMBER}"
         
         // ====================================================
-        // NEXUS CONFIGURATION - UPDATED
+        // NEXUS CONFIGURATION
         // ====================================================
-        NEXUS_REGISTRY = 'localhost:8083'  // Changed from 8082 to 8083
-        NEXUS_REPOSITORY = 'employee-docker'  // Your repository name
+        NEXUS_REGISTRY = 'localhost:8083'
+        NEXUS_REPOSITORY = 'employee-docker'
         
         HELM_REPO_URL = 'https://github.com/sakthirangasamy/employee-management-gitops.git'
         HELM_BRANCH = 'main'
@@ -32,7 +32,11 @@ pipeline {
 
         stage('PHASE 1 - Checkout Application') {
             steps {
-                echo 'PHASE 1 - CHECKOUT APPLICATION'
+                echo '''
+                ==============================================
+                PHASE 1 - CHECKOUT APPLICATION
+                ==============================================
+                '''
                 checkout scm
             }
         }
@@ -144,9 +148,6 @@ pipeline {
                         echo "✅ Images pushed to Nexus:"
                         echo "   ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
                         echo "   ${NEXUS_REGISTRY}/${IMAGE_NAME}:latest"
-                        echo ""
-                        echo "📦 Nexus Repository: ${NEXUS_REPOSITORY}"
-                        echo "🔗 Nexus URL: http://localhost:8083/#browse/browse:${NEXUS_REPOSITORY}"
                     '''
                 }
             }
@@ -158,6 +159,11 @@ pipeline {
 
         stage('PHASE 3 - Checkout Helm Repository') {
             steps {
+                echo '''
+                ==============================================
+                PHASE 3 - CHECKOUT GITOPS REPOSITORY
+                ==============================================
+                '''
                 dir('helm-repo') {
                     git(
                         branch: "${HELM_BRANCH}",
@@ -266,7 +272,6 @@ pipeline {
                             echo "✅ Changes pushed to GitHub"
                             echo "   Repository: ${HELM_REPO_URL}"
                             echo "   Branch: ${HELM_BRANCH}"
-                            echo "   Commit: $(git log -1 --oneline)"
                         '''
                     }
                 }
@@ -276,10 +281,10 @@ pipeline {
         stage('PHASE 3 - Argo CD Deployment') {
             steps {
                 echo '''
-                ╔═════════════════════════════════════════════════════╗
-                ║  ARGO CD GITOPS DEPLOYMENT                        ║
-                ╚═════════════════════════════════════════════════════╝
-                
+                ==============================================
+                ARGO CD GITOPS DEPLOYMENT
+                ==============================================
+
                          GitHub
                             |
                             v
@@ -295,12 +300,12 @@ pipeline {
                             |
                             v
                   Employee Management Pod
-                
-                ┌─────────────────────────────────────────────────────┐
-                │  Jenkins updates GitOps repository only.          │
-                │  Argo CD handles the actual deployment.           │
-                │  Auto-sync ensures continuous delivery.           │
-                └─────────────────────────────────────────────────────┘
+
+                Jenkins updates GitOps repository only.
+                Argo CD handles the actual deployment.
+                Auto-sync ensures continuous delivery.
+
+                ==============================================
                 '''
             }
         }
@@ -308,55 +313,37 @@ pipeline {
         stage('PHASE 3 - Deployment Verification') {
             steps {
                 echo """
-                ╔═════════════════════════════════════════════════════╗
-                ║  DEPLOYMENT INFORMATION                            ║
-                ╚═════════════════════════════════════════════════════╝
-                
-                ┌─────────────────────────────────────────────────────┐
-                │  BUILD INFORMATION                                 │
-                ├─────────────────────────────────────────────────────┤
-                │  Build Number    : ${BUILD_NUMBER}                 │
-                │  Docker Image    : ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} │
-                │  Image Tag       : ${IMAGE_TAG}                    │
-                └─────────────────────────────────────────────────────┘
-                
-                ┌─────────────────────────────────────────────────────┐
-                │  NEXUS INFORMATION                                 │
-                ├─────────────────────────────────────────────────────┤
-                │  Registry        : ${NEXUS_REGISTRY}               │
-                │  Repository      : ${NEXUS_REPOSITORY}             │
-                │  Image URL       : ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} │
-                │  Nexus UI        : http://localhost:8083           │
-                └─────────────────────────────────────────────────────┘
-                
-                ┌─────────────────────────────────────────────────────┐
-                │  GITOPS INFORMATION                                │
-                ├─────────────────────────────────────────────────────┤
-                │  Repository      : ${HELM_REPO_URL}                │
-                │  Branch          : ${HELM_BRANCH}                  │
-                │  Updated File    : values.yaml                     │
-                └─────────────────────────────────────────────────────┘
-                
-                ┌─────────────────────────────────────────────────────┐
-                │  DEPLOYMENT INFORMATION                            │
-                ├─────────────────────────────────────────────────────┤
-                │  Tool            : Argo CD                         │
-                │  Kubernetes      : K3s                             │
-                │  Sync Mode       : AUTO SYNC                       │
-                └─────────────────────────────────────────────────────┘
-                
-                ======================================================
-                
+                ==============================================
+                DEPLOYMENT INFORMATION
+                ==============================================
+
+                Build Number       : ${BUILD_NUMBER}
+                Docker Image       : ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+                Image Tag          : ${IMAGE_TAG}
+
+                Nexus Registry     : ${NEXUS_REGISTRY}
+                Nexus Repository   : ${NEXUS_REPOSITORY}
+                Nexus UI           : http://localhost:8083
+
+                GitOps Repository  : ${HELM_REPO_URL}
+                Git Branch         : ${HELM_BRANCH}
+
+                Deployment Tool    : Argo CD
+                Kubernetes         : K3s
+                Sync Mode          : AUTO SYNC
+
+                ==============================================
+
                 Argo CD will detect the Git change
                 and synchronize the application automatically.
-                
+
                 Monitor the deployment:
                 1. Argo CD UI: http://localhost:8080
                 2. K3s: kubectl get pods -n default
                 3. Application: http://localhost:30080
                 4. Nexus: http://localhost:8083/#browse/browse:${NEXUS_REPOSITORY}
-                
-                ======================================================
+
+                ==============================================
                 """
             }
         }
@@ -365,63 +352,54 @@ pipeline {
     post {
         success {
             echo """
-            ╔═════════════════════════════════════════════════════╗
-            ║  ✅  CI/CD PIPELINE COMPLETED SUCCESSFULLY        ║
-            ╚═════════════════════════════════════════════════════╝
-            
-            ┌─────────────────────────────────────────────────────┐
-            │  DEPLOYMENT SUMMARY                                │
-            ├─────────────────────────────────────────────────────┤
-            │                                                    │
-            │  ✅ Phase 1: JAR Built                             │
-            │  ✅ Phase 2: Docker Image Built                    │
-            │  ✅ Phase 2: Image Pushed to Nexus                 │
-            │  ✅ Phase 3: GitOps Repository Updated             │
-            │  ✅ Phase 3: Argo CD Sync Triggered                │
-            │                                                    │
-            └─────────────────────────────────────────────────────┘
-            
-            ┌─────────────────────────────────────────────────────┐
-            │  IMAGE DETAILS                                     │
-            ├─────────────────────────────────────────────────────┤
-            │                                                    │
-            │  Image: ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} │
-            │  Registry: localhost:8083                          │
-            │  Repository: ${NEXUS_REPOSITORY}                   │
-            │                                                    │
-            │  📦 View in Nexus:                                 │
-            │  http://localhost:8083/#browse/browse:${NEXUS_REPOSITORY} │
-            │                                                    │
-            └─────────────────────────────────────────────────────┘
-            
-            ╔═════════════════════════════════════════════════════╗
-            ║  🎉  DEPLOYMENT SUCCESSFUL!                        ║
-            ╚═════════════════════════════════════════════════════╝
+            ==============================================
+            ✅  CI/CD PIPELINE COMPLETED SUCCESSFULLY
+            ==============================================
+
+            DEPLOYMENT SUMMARY
+            -------------------
+            ✅ Phase 1: JAR Built
+            ✅ Phase 2: Docker Image Built
+            ✅ Phase 2: Image Pushed to Nexus
+            ✅ Phase 3: GitOps Repository Updated
+            ✅ Phase 3: Argo CD Sync Triggered
+
+            IMAGE DETAILS
+            --------------
+            Image: ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+            Registry: localhost:8083
+            Repository: ${NEXUS_REPOSITORY}
+
+            View in Nexus:
+            http://localhost:8083/#browse/browse:${NEXUS_REPOSITORY}
+
+            ==============================================
+            🎉  DEPLOYMENT SUCCESSFUL!
+            ==============================================
             """
         }
 
         failure {
             echo """
-            ╔═════════════════════════════════════════════════════╗
-            ║  ❌  CI/CD PIPELINE FAILED                         ║
-            ╚═════════════════════════════════════════════════════╝
-            
-            ┌─────────────────────────────────────────────────────┐
-            │  TROUBLESHOOTING CHECKLIST                         │
-            ├─────────────────────────────────────────────────────┤
-            │                                                    │
-            │  □  Nexus is running on port 8083                  │
-            │  □  Nexus credentials are correct                  │
-            │  □  Docker daemon is running                       │
-            │  □  GitHub credentials are correct                 │
-            │  □  GitOps repository exists                       │
-            │  □  values.yaml exists in GitOps repo              │
-            │  □  Argo CD is running                             │
-            │  □  K3s cluster is healthy                         │
-            │                                                    │
-            └─────────────────────────────────────────────────────┘
-            
+            ==============================================
+            ❌  CI/CD PIPELINE FAILED
+            ==============================================
+
+            TROUBLESHOOTING CHECKLIST
+            -------------------------
+            □  Nexus is running on port 8083
+            □  Nexus credentials are correct
+            □  Docker daemon is running
+            □  GitHub credentials are correct
+            □  GitOps repository exists
+            □  values.yaml exists in GitOps repo
+            □  Argo CD is running
+            □  K3s cluster is healthy
+
             Check Nexus: http://localhost:8083
+            Check Jenkins logs for more details.
+
+            ==============================================
             """
         }
 
