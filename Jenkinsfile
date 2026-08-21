@@ -116,32 +116,30 @@ pipeline {
                         passwordVariable: 'NEXUS_PASSWORD'
                     )
                 ]) {
-                    sh """
+                    sh '''
                         echo "======================================"
                         echo "LOGIN TO NEXUS REGISTRY"
                         echo "======================================"
-                        
-                        echo "Nexus URL: ${NEXUS_REGISTRY}"
-                        
-                        echo "${NEXUS_PASSWORD}" | docker login ${NEXUS_REGISTRY} \\
-                            -u "${NEXUS_USERNAME}" \\
-                            --password-stdin
-                        
+
+                        echo "Nexus URL: $NEXUS_REGISTRY"
+
+                        echo "$NEXUS_PASSWORD" | docker login "$NEXUS_REGISTRY" -u "$NEXUS_USERNAME" --password-stdin
+
                         echo "======================================"
                         echo "PUSHING IMAGE TO NEXUS"
                         echo "======================================"
-                        
-                        docker push ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-                        docker push ${NEXUS_REGISTRY}/${IMAGE_NAME}:latest
-                        
+
+                        docker push "$NEXUS_REGISTRY/$IMAGE_NAME:$IMAGE_TAG"
+                        docker push "$NEXUS_REGISTRY/$IMAGE_NAME:latest"
+
                         echo "======================================"
                         echo "NEXUS PUSH SUCCESSFUL"
                         echo "======================================"
-                        
+
                         echo "✅ Images pushed to Nexus:"
-                        echo "   ${NEXUS_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
-                        echo "   ${NEXUS_REGISTRY}/${IMAGE_NAME}:latest"
-                    """
+                        echo "   $NEXUS_REGISTRY/$IMAGE_NAME:$IMAGE_TAG"
+                        echo "   $NEXUS_REGISTRY/$IMAGE_NAME:latest"
+                    '''
                 }
             }
         }
@@ -244,20 +242,19 @@ pipeline {
                             passwordVariable: 'GIT_PASSWORD'
                         )
                     ]) {
-                        sh """
+                        sh '''
                             echo "======================================"
                             echo "PUSHING TO GITHUB"
                             echo "======================================"
-                            
-                            git remote set-url origin \\
-                            "https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/sakthirangasamy/employee-management-gitops.git"
-                            
-                            git push origin ${HELM_BRANCH}
-                            
+
+                            git remote set-url origin "https://$GIT_USERNAME:$GIT_PASSWORD@github.com/sakthirangasamy/employee-management-gitops.git"
+
+                            git push origin "$HELM_BRANCH"
+
                             echo "======================================"
                             echo "GITOPS REPOSITORY UPDATED"
                             echo "======================================"
-                        """
+                        '''
                     }
                 }
             }
@@ -391,7 +388,7 @@ pipeline {
         always {
             echo """
             ==============================================
-            BUILD COMPLETED AT: $(date)
+            BUILD COMPLETED AT: ${new Date()}
             BUILD NUMBER: ${BUILD_NUMBER}
             ==============================================
             """
